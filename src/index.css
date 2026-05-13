@@ -1,0 +1,166 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.diagnosis-shell {
+  min-height: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.diagnosis-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-height: 44px;
+  padding: 8px 12px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.diagnosis-header__title {
+  flex: 0 0 auto;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.diagnosis-header__hint {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.diagnosis-alert-wrap {
+  flex-shrink: 0;
+  padding: 8px 12px 0;
+  background: #f5f5f5;
+}
+
+.diagnosis-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.diagnosis-shell.ant-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.diagnosis-body.ant-layout {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+}
+
+.diagnosis-sider {
+  padding: 16px;
+  border-right: 1px solid #f0f0f0;
+  overflow: auto;
+}
+
+.diagnosis-content {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fafafa;
+}
+
+.react-flow-wrap {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  margin: 0 12px 12px;
+  background: #fff;
+}
+
+.react-flow-wrap .ant-spin-nested-loading,
+.react-flow-wrap .ant-spin-container {
+  height: 100%;
+}
+
+.react-flow__node-default .react-flow__node-default-label {
+  max-width: 200px;
+  white-space: pre-wrap;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.trace-node--blocked {
+  animation: trace-node-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes trace-node-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 77, 79, 0);
+  }
+}
+
+.diagnosis-canvas-hint {
+  padding: 6px 12px;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+/* 飞书插件侧栏常为窄 iframe：纵向堆叠，配置区限高可滚动 */
+@media (max-width: 720px) {
+  .diagnosis-body.ant-layout {
+    flex-direction: column;
+  }
+
+  .diagnosis-sider.ant-layout-sider {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 auto !important;
+    border-right: none;
+    border-bottom: 1px solid #f0f0f0;
+    max-height: min(38vh, 280px);
+  }
+
+  .diagnosis-content {
+    min-height: 0;
+    flex: 1 1 50%;
+  }
+}
+
+/* 矮视口：压缩小地图与控件占位 */
+@media (max-height: 520px) {
+  .diagnosis-header {
+    min-height: 36px;
+    padding: 4px 8px;
+  }
+
+  .diagnosis-sider {
+    max-height: min(36vh, 220px);
+    padding: 8px 12px;
+  }
+
+  .react-flow__minimap {
+    display: none !important;
+  }
+}
