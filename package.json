@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "feishu:opdev:sync-dist": "node scripts/sync-opdev-block-dist.mjs",
+    "feishu:opdev:upload": "node scripts/inject-block-type.mjs && npm run build && node scripts/sync-opdev-block-dist.mjs && npx opdev upload . -t block -v patch -d \"opdev upload\""
   },
   "dependencies": {
     "@lark-base-open/js-sdk": "^1.0.2",
@@ -20,6 +22,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@lark-opdev/cli": "^3.4.4",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

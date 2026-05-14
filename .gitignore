@@ -13,6 +13,9 @@ node_modules
 dist-ssr
 *.local
 
+# opdev 上传前由 scripts/sync-opdev-block-dist.mjs 从 dist 生成，勿提交副本
+block/bitable-view/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

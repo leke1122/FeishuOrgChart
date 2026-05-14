@@ -1,4 +1,4 @@
-import { bitable } from '@lark-base-open/js-sdk'
+import { bitable, FieldType } from '@lark-base-open/js-sdk'
 import type { Edge, Node } from 'reactflow'
 import type { TraceNodeData } from '../types/trace'
 import { formatCellDisplay } from './cellDisplay'
@@ -76,13 +76,22 @@ function layoutByDepth(
 /**
  * 从起点记录沿指定关联字段向「上游」追溯，构建树状图数据（边方向：父 record → 子 record，叶为起点）。
  */
+const LINK_TRACE_TYPES = new Set([
+  FieldType.SingleLink,
+  FieldType.DuplexLink,
+  FieldType.Lookup,
+])
+
 export async function buildTraceGraph(params: {
   table: BitableTable
   startRecordId: string
   linkFieldId: string
   primaryFieldId: string
+  /** 用于非关联字段时给出「无法向上游解析」提示 */
+  traceFieldType?: FieldType | null
 }): Promise<TraceGraphResult> {
-  const { table, startRecordId, linkFieldId, primaryFieldId } = params
+  const { table, startRecordId, linkFieldId, primaryFieldId, traceFieldType } =
+    params
   const warnings: string[] = []
   const edgeKeys = new Set<string>()
   const edges: Edge[] = []
@@ -150,6 +159,16 @@ export async function buildTraceGraph(params: {
   }
 
   await visit(startRecordId, 0, new Set())
+
+  if (
+    edges.length === 0 &&
+    traceFieldType != null &&
+    !LINK_TRACE_TYPES.has(traceFieldType)
+  ) {
+    warnings.push(
+      '当前「追踪字段」不是「关联记录 / 查找引用」类型，无法解析上游 recordId，链路仅显示当前行。若要向上追溯，请选择上述类型的字段。',
+    )
+  }
 
   const nodeIds = new Set<string>([startRecordId])
   for (const e of edges) {

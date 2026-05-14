@@ -30,7 +30,7 @@ const PLACEHOLDER_HINT: Node[] = [
   {
     id: 'hint',
     position: { x: 40, y: 100 },
-    data: { label: '请选择「追踪维度」字段以展示向上追溯链路' },
+    data: { label: '请选择「追踪字段」以展示向上追溯链路' },
     type: 'default',
   },
 ]
@@ -48,15 +48,22 @@ const PLACEHOLDER_SELECT_ROW: Node[] = [
 export function DiagnosisPage() {
   const {
     hostError,
+    tableContextHint,
     recordTitle,
     linkFieldOptions,
     linkFieldId,
     setLinkFieldId,
     loading,
     selection,
+    activeTableId,
+    setActiveTableId,
+    baseTables,
     primaryFieldId,
     scalarFieldOptions,
+    traceFieldType,
   } = useBitableWorkspace()
+
+  const prefsTableId = activeTableId ?? selection?.tableId ?? null
 
   const flowRef = useRef<ReactFlowInstance | null>(null)
   const wrapRef = useRef<HTMLDivElement | null>(null)
@@ -76,25 +83,25 @@ export function DiagnosisPage() {
   )
 
   useEffect(() => {
-    if (!selection?.tableId) return
+    if (!prefsTableId) return
     const prefs = loadDiagnosisPrefs({
-      baseId: selection.baseId,
-      tableId: selection.tableId,
-      viewId: selection.viewId,
+      baseId: selection?.baseId ?? null,
+      tableId: prefsTableId,
+      viewId: selection?.viewId ?? null,
     })
     /* eslint-disable react-hooks/set-state-in-effect -- 从 localStorage 恢复视图级偏好 */
     setTargetFieldId(prefs.targetFieldId)
     setTargetValue(prefs.targetValue ?? '')
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [selection?.baseId, selection?.tableId, selection?.viewId])
+  }, [selection?.baseId, prefsTableId, selection?.viewId])
 
   useEffect(() => {
-    if (!selection?.tableId) return
+    if (!prefsTableId) return
     saveDiagnosisPrefs(
       {
-        baseId: selection.baseId,
-        tableId: selection.tableId,
-        viewId: selection.viewId,
+        baseId: selection?.baseId ?? null,
+        tableId: prefsTableId,
+        viewId: selection?.viewId ?? null,
       },
       {
         targetFieldId,
@@ -103,7 +110,7 @@ export function DiagnosisPage() {
     )
   }, [
     selection?.baseId,
-    selection?.tableId,
+    prefsTableId,
     selection?.viewId,
     targetFieldId,
     targetValue,
@@ -139,7 +146,7 @@ export function DiagnosisPage() {
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
     if (
-      !selection?.tableId ||
+      !activeTableId ||
       !selection?.recordId ||
       !linkFieldId ||
       !primaryFieldId ||
@@ -158,12 +165,13 @@ export function DiagnosisPage() {
 
     void (async () => {
       try {
-        const table = await bitable.base.getTableById(selection.tableId!)
+        const table = await bitable.base.getTableById(activeTableId)
         const { nodes, edges, warnings } = await buildTraceGraph({
           table,
           startRecordId: selection.recordId!,
           linkFieldId,
           primaryFieldId,
+          traceFieldType,
         })
         if (cancelled) return
         setTraceNodes(nodes)
@@ -187,15 +195,16 @@ export function DiagnosisPage() {
     }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [
-    selection?.tableId,
+    activeTableId,
     selection?.recordId,
     linkFieldId,
     primaryFieldId,
     loading,
+    traceFieldType,
   ])
 
   useEffect(() => {
-    if (!traceNodes?.length || !selection?.tableId) {
+    if (!traceNodes?.length || !activeTableId) {
       /* eslint-disable react-hooks/set-state-in-effect -- 无链路时清空快照 */
       setSnapshots(new Map())
       /* eslint-enable react-hooks/set-state-in-effect */
@@ -204,7 +213,7 @@ export function DiagnosisPage() {
     let cancelled = false
     void (async () => {
       try {
-        const table = await bitable.base.getTableById(selection.tableId!)
+        const table = await bitable.base.getTableById(activeTableId)
         const ids = traceNodes.map((n) => n.data.recordId)
         const rows = await table.getRecordsByIds(ids, false)
         if (cancelled) return
@@ -221,7 +230,7 @@ export function DiagnosisPage() {
     return () => {
       cancelled = true
     }
-  }, [traceNodes, selection?.tableId])
+  }, [traceNodes, activeTableId])
 
   /* eslint-disable react-hooks/preserve-manual-memoization -- 依赖与链路/快照一致即可 */
   const diagnosis = useMemo(() => {
@@ -312,11 +321,17 @@ export function DiagnosisPage() {
   }, [graphLoading, flowNodes, flowEdges, diagnosis])
 
   const headerHint =
-    !selection?.recordId
-      ? '请在表格中选中一行记录（点击行或单元格）'
-      : loading
-        ? '正在读取记录…'
-        : `当前诊断：${recordTitle || selection.recordId}`
+    !activeTableId
+      ? baseTables.length > 1
+        ? '请先在侧栏选择要诊断的数据表（子表）'
+        : '正在解析当前数据表，请稍候或刷新后重试'
+      : !selection?.recordId
+        ? loading
+          ? '正在载入当前表字段…'
+          : '已载入当前表字段，请点击表格中的一行或单元格以选定诊断起点'
+        : loading
+          ? '正在读取记录…'
+          : `当前诊断：${recordTitle || selection.recordId}`
 
   const graphAlertMessage = graphWarnings.length
     ? graphWarnings.join(' ')
@@ -338,6 +353,11 @@ export function DiagnosisPage() {
           <Alert type="warning" showIcon message={hostError} />
         </div>
       ) : null}
+      {tableContextHint ? (
+        <div className="diagnosis-alert-wrap">
+          <Alert type="info" showIcon message={tableContextHint} />
+        </div>
+      ) : null}
 
       <Layout className="diagnosis-body">
         <Sider width={320} theme="light" className="diagnosis-sider">
@@ -346,38 +366,58 @@ export function DiagnosisPage() {
           </Typography.Title>
           <Spin spinning={loading}>
             <Form layout="vertical" size="small">
-              <Form.Item label="追踪维度（关联 / 查找引用）">
+              <Form.Item label="数据表（子表）">
                 <Select
                   placeholder={
-                    selection?.recordId
-                      ? '请选择用于向上追溯的字段'
-                      : '请先选中一行记录'
+                    baseTables.length
+                      ? '选择要诊断的子表（将加载该表全部字段）'
+                      : '正在加载子表列表…'
+                  }
+                  showSearch
+                  optionFilterProp="label"
+                  value={activeTableId ?? undefined}
+                  onChange={(v) => setActiveTableId(v)}
+                  disabled={baseTables.length === 0}
+                  options={baseTables.map((t) => ({
+                    value: t.id,
+                    label: t.name,
+                  }))}
+                />
+              </Form.Item>
+              <Form.Item label="追踪字段（任选；关联类可向上追溯）">
+                <Select
+                  placeholder={
+                    !activeTableId
+                      ? '请先选择子表'
+                      : '选择用于向上追溯的字段（推荐关联/查找引用）'
                   }
                   allowClear
                   value={linkFieldId}
                   onChange={(v) => setLinkFieldId(v)}
-                  disabled={!selection?.recordId || loading}
+                  disabled={!activeTableId || loading}
                   options={linkFieldOptions}
                   notFoundContent={
-                    selection?.recordId && !loading
-                      ? '当前表无关联记录或查找引用字段'
-                      : null
+                    activeTableId && !loading ? '当前表无字段' : null
                   }
                 />
               </Form.Item>
               <Divider style={{ margin: '12px 0' }} />
-              <Form.Item label="目标字段（非关联类）">
+              <Form.Item label="目标字段（用于判断是否达标）">
                 <Select
-                  placeholder="选择用于判断是否达标的字段"
+                  placeholder={
+                    !activeTableId
+                      ? '请先选择子表'
+                      : '选择目标字段（可与追踪字段不同）'
+                  }
                   allowClear
                   showSearch
                   optionFilterProp="label"
                   value={targetFieldId}
                   onChange={(v) => setTargetFieldId(v)}
-                  disabled={!selection?.recordId || loading}
+                  disabled={!activeTableId || loading}
                   options={scalarFieldOptions}
                   notFoundContent={
-                    selection?.recordId && !loading ? '当前表无可用字段' : null
+                    activeTableId && !loading ? '暂无可选字段' : null
                   }
                 />
               </Form.Item>
@@ -386,7 +426,7 @@ export function DiagnosisPage() {
                   placeholder="与单元格展示文案一致，如：已完成"
                   value={targetValue}
                   onChange={(e) => setTargetValue(e.target.value)}
-                  disabled={!selection?.recordId || loading}
+                  disabled={!activeTableId || loading}
                 />
               </Form.Item>
             </Form>

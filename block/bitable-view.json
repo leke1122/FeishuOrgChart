@@ -1,0 +1,9 @@
+{
+  "manifestVersion": 1,
+  "blockTypeID": "blk_6a04096d8a598cd92fc75f01",
+  "projectName": "bitable-view",
+  "blockRenderType": "offlineWeb",
+  "offlineWebConfig": {
+    "main_url": "https://feishu-org-chart.vercel.app/"
+  }
+}
