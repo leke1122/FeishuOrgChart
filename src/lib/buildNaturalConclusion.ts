@@ -1,3 +1,5 @@
+import { suggestTargetFieldMismatchHint } from './diagnosisReason'
+
 export type NaturalConclusionParams = {
   recordTitle: string
   recordId?: string | null
@@ -9,6 +11,8 @@ export type NaturalConclusionParams = {
   targetFieldName?: string
   targetValueTrimmed: string
   blockedCount: number
+  traceNodeCount: number
+  traceEdgeCount: number
   rootFirstBlockedTitle: string | null
   rootFirstBlockedReason: string | null
   nearestBlockedTitle: string | null
@@ -39,8 +43,8 @@ export function buildNaturalConclusion(p: NaturalConclusionParams): string {
   const root = p.rootFirstBlockedTitle ?? '上游节点'
   const rootDetail = p.rootFirstBlockedReason ? `${p.rootFirstBlockedReason}` : ''
   let text = `诊断结果：${cond}，从链路根向当前记录「${p.recordTitle}」追溯，「${root}」为首个未达标卡点`
-  if (rootDetail) text += `：${rootDetail}`
-  text += '。'
+  if (rootDetail) text += `。根因明细：${rootDetail}`
+  else text += '。'
 
   const near = p.nearestBlockedTitle
   if (near && near !== p.rootFirstBlockedTitle) {
@@ -49,6 +53,17 @@ export function buildNaturalConclusion(p: NaturalConclusionParams): string {
     if (nearDetail) text += `（${nearDetail}）`
     text += '。'
   }
+
+  if (p.traceNodeCount === 1 && p.traceEdgeCount === 0 && p.blockedCount > 0) {
+    text +=
+      ' 说明：当前未解析到任何上游行，画布上可能只显示本条记录；上述「根因」即该记录在目标条件上的取值与目标值不一致。'
+  }
+
+  const cfgHint = suggestTargetFieldMismatchHint(
+    p.targetFieldName,
+    p.targetValueTrimmed,
+  )
+  if (cfgHint) text += ` ${cfgHint}`
 
   text += `建议优先在表中处理上述卡点，以改善「${p.recordTitle}」的达成条件。`
   return text

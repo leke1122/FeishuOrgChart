@@ -1,6 +1,7 @@
 import type { Edge, Node } from 'reactflow'
 import type { TraceNodeData } from '../types/trace'
 import { formatCellDisplay } from './cellDisplay'
+import { formatMismatchReason } from './diagnosisReason'
 import { cellMatchesTarget } from './targetMatch'
 import { computeDepthsFromLeaf } from './buildTraceGraph'
 
@@ -50,9 +51,18 @@ export function applyTargetDiagnosis(params: {
   targetValue: string
   edges: Edge[]
   leafRecordId: string
+  /** 侧栏目标字段展示名，如「订单编号（文本）」 */
+  targetFieldLabel?: string
 }): DiagnosisResult {
-  const { traceNodes, snapshots, targetFieldId, targetValue, edges, leafRecordId } =
-    params
+  const {
+    traceNodes,
+    snapshots,
+    targetFieldId,
+    targetValue,
+    edges,
+    leafRecordId,
+    targetFieldLabel,
+  } = params
   const trimmed = targetValue.trim()
   const diagnosing = Boolean(targetFieldId && trimmed !== '')
 
@@ -75,7 +85,12 @@ export function applyTargetDiagnosis(params: {
     if (diagnosing && snap && targetFieldId) {
       isBlocked = !cellMatchesTarget(raw, trimmed)
       if (isBlocked) {
-        reason = `「${formatCellDisplay(raw)}」未满足目标「${trimmed}」`
+        reason = formatMismatchReason({
+          recordDisplayTitle: n.data.title,
+          targetFieldLabel,
+          raw,
+          expectedTrimmed: trimmed,
+        })
         blockedTitles.push(n.data.title)
       }
     }

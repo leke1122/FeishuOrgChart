@@ -265,6 +265,8 @@ export function DiagnosisPage() {
       targetValue,
       edges: traceEdges,
       leafRecordId: selection.recordId,
+      targetFieldLabel: scalarFieldOptions.find((o) => o.value === targetFieldId)
+        ?.label,
     })
   }, [
     traceNodes,
@@ -273,6 +275,7 @@ export function DiagnosisPage() {
     targetValue,
     traceEdges,
     selection?.recordId,
+    scalarFieldOptions,
   ])
   /* eslint-enable react-hooks/preserve-manual-memoization */
 
@@ -295,6 +298,8 @@ export function DiagnosisPage() {
         )?.label,
         targetValueTrimmed: targetValue.trim(),
         blockedCount: diagnosis.blockedCount,
+        traceNodeCount: traceNodes?.length ?? 0,
+        traceEdgeCount: traceEdges.length,
         rootFirstBlockedTitle: diagnosis.rootFirstBlockedTitle,
         rootFirstBlockedReason: diagnosis.rootFirstBlockedReason,
         nearestBlockedTitle: diagnosis.nearestBlockedTitle,
@@ -304,6 +309,7 @@ export function DiagnosisPage() {
       recordTitle,
       selection?.recordId,
       traceNodes,
+      traceEdges,
       linkFieldId,
       targetFieldId,
       targetValue,
