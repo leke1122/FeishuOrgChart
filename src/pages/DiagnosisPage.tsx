@@ -450,6 +450,19 @@ export function DiagnosisPage() {
               <Alert type="info" showIcon message={graphAlertMessage} />
             </div>
           ) : null}
+          {activeTableId &&
+          linkFieldId &&
+          !selection?.recordId &&
+          !graphLoading ? (
+            <div style={{ padding: '0 12px 8px' }}>
+              <Alert
+                type="warning"
+                showIcon
+                message="链路尚未生成：请在左侧「多维表格」里点击某一行的行号或任意单元格，选定一条记录作为起点。"
+                description="侧栏里选的是子表与字段配置；画布上的链路必须从宿主返回的「当前选中行」开始。选成功后，顶部会显示「当前诊断：…」而非仅提示点击表格。"
+              />
+            </div>
+          ) : null}
           <div className="react-flow-wrap" ref={wrapRef}>
             <Spin spinning={graphLoading} tip="构建链路中…">
               <ReactFlow

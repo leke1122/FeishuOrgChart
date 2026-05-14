@@ -78,6 +78,8 @@ body {
 .diagnosis-content {
   position: relative;
   min-height: 0;
+  /* 飞书 iframe 内 flex 子项高度易塌成 0，导致链路画布全白 */
+  min-height: min(36vh, 280px);
   min-width: 0;
   flex: 1;
   display: flex;
@@ -87,7 +89,7 @@ body {
 
 .react-flow-wrap {
   flex: 1;
-  min-height: 0;
+  min-height: min(42vh, 360px);
   height: auto;
   border: 1px solid #e8e8e8;
   border-radius: 8px;

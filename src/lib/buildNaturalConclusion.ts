@@ -23,7 +23,7 @@ export function buildNaturalConclusion(p: NaturalConclusionParams): string {
     return '请先在多维表格中选中一行记录，再查看诊断结论。'
   }
   if (!p.linkFieldSelected || !p.hasTrace) {
-    return '请先在左侧选择「追踪维度」并生成上游链路；链路就绪后再配置目标条件，即可在此生成诊断结论文案。'
+    return '请先在左侧选择「追踪字段」并在表格中选中一行以生成上游链路；链路就绪后再配置目标字段与目标值，即可在此生成诊断结论文案。'
   }
   if (!p.diagnosing) {
     return '请配置「目标字段」与「目标值」。系统将遍历链路上各节点并与目标比对，在本区域输出结论文案，同时在画布上以绿色（达标）与红色（未达标）标示。'
